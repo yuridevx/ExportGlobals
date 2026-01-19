@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": [
+    "exile-api"
+  ],
+  "enableAllProjectMcpServers": true
+}

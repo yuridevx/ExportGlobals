@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+
+    "exile-api": {
+      "type": "stdio",
+      "command": "S:\\Reflector\\McpNetDll\\bin\\Release\\net9.0\\publish\\McpNetDll.exe",
+      "args": [
+        "D:\\ExileApi\\ExileCore.dll",
+        "D:\\ExileApi\\GameOffsets.dll"
+      ]
+    }
+  }
+}
