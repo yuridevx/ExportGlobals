@@ -238,7 +238,6 @@ public class McpServer : IDisposable
         var (text, isError) = toolName switch
         {
             "execute" => FormatExecuteResult(await ExecuteWithTimeoutAsync(arguments)),
-            "cancel" => FormatCancelResult(_controller.Cancel(arguments?["sessionId"]?.ToString())),
             _ => ($"Unknown tool: {toolName}", true)
         };
 
@@ -267,16 +266,6 @@ public class McpServer : IDisposable
             ExecuteToolResult.CompletedResult r => ($"Result: {FormatObject(r.Result)}", false),
             ExecuteToolResult.FailureResult r => ($"Execution failed.\nError: {r.Error}", true),
             ExecuteToolResult.CompilationFailedResult r => ($"Compilation failed:\n{r.Errors}", true),
-            _ => ("Unknown result", true)
-        };
-    }
-
-    private static (string text, bool isError) FormatCancelResult(CancelToolResult result)
-    {
-        return result switch
-        {
-            CancelToolResult.NotFoundResult => ("Session not found", true),
-            CancelToolResult.CancelledResult r => ($"Session {r.SessionId} cancelled", false),
             _ => ("Unknown result", true)
         };
     }
@@ -413,24 +402,6 @@ public class McpServer : IDisposable
                         }
                     },
                     ["required"] = new[] { "code" }
-                }
-            },
-            new Dictionary<string, object>
-            {
-                ["name"] = "cancel",
-                ["description"] = "Cancel a running execution. Use when an operation is stuck or no longer needed.",
-                ["inputSchema"] = new Dictionary<string, object>
-                {
-                    ["type"] = "object",
-                    ["properties"] = new Dictionary<string, object>
-                    {
-                        ["sessionId"] = new Dictionary<string, string>
-                        {
-                            ["type"] = "string",
-                            ["description"] = "Session ID to cancel"
-                        }
-                    },
-                    ["required"] = new[] { "sessionId" }
                 }
             }
         };
