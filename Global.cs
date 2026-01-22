@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ExileCore;
 using ExileCore.PoEMemory.MemoryObjects;
 
-namespace Visual;
+namespace ExportGlobals;
 
 /// <summary>
 /// Static access to core plugin instances.
@@ -11,8 +11,8 @@ public static class Global
 {
     public static GameController Controller { get; private set; }
     public static Graphics Graphics { get; private set; }
-    public static VisualSettings Settings { get; private set; }
-    public static Visual Plugin { get; private set; }
+    public static ExportGlobalsSettings Settings { get; private set; }
+    public static ExportGlobals Plugin { get; private set; }
 
     // Convenience accessors
     public static IngameState IngameState => Controller?.IngameState;
@@ -21,7 +21,7 @@ public static class Global
     public static ICollection<Entity> Entities => Controller?.Entities;
     public static bool InGame => Controller?.InGame ?? false;
 
-    internal static void Init(Visual plugin, GameController controller, Graphics graphics, VisualSettings settings)
+    internal static void Init(ExportGlobals plugin, GameController controller, Graphics graphics, ExportGlobalsSettings settings)
     {
         Plugin = plugin;
         Controller = controller;
