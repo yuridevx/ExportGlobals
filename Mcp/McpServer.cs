@@ -305,15 +305,44 @@ public class McpServer : IDisposable
                     - `public static async Task<object> Execute(CancellationToken ct)` (static method)
 
                     ## Available via ExportGlobals.Global
-                    - `Global.Controller` - GameController
-                    - `Global.Player` - Current player entity
-                    - `Global.Entities` - All loaded entities
-                    - `Global.IngameState` - Current game state
-                    - `Global.IngameUi` - UI elements
-                    - `Global.Camera` - Game camera
-                    - `Global.Files` - Game data files
-                    - `Global.Memory` - Memory access (TheGame)
-                    - `Global.InGame` - Check if in game
+                    - `Global.Controller` - GameController (main entry point)
+                    - `Global.Player` - Current player Entity
+                    - `Global.Entities` - ICollection<Entity> of all loaded entities
+                    - `Global.IngameState` - IngameState (Camera, Data, ServerData, IngameUi)
+                    - `Global.IngameUi` - IngameUIElements (StashElement, InventoryPanel, Map, SkillBar, Atlas, TradeWindow, etc.)
+                    - `Global.Camera` - Camera (WorldToScreen, Position, Size, ZoomLevel)
+                    - `Global.Files` - FilesContainer (BaseItemTypes, Mods, Stats, PassiveSkills, WorldAreas, SkillGems, etc.)
+                    - `Global.Memory` - TheGame (game states, AreaChangeCount, IsLoading)
+                    - `Global.InGame` - bool check if in game
+
+                    ## Entity Properties
+                    Entity has: Id, Path, Metadata, RenderName, GridPos, Pos, DistancePlayer, IsValid, IsAlive, IsDead, IsHostile, IsTargetable, Rarity, Type, Buffs, Stats
+                    Use `entity.GetComponent<T>()` to access components.
+
+                    ## Key Components (ExileCore.PoEMemory.Components)
+                    - **Life**: CurHP, MaxHP, CurES, MaxES, CurMana, MaxMana, HPPercentage, ESPercentage
+                    - **Actor**: ActorSkills, Animation, CurrentAction, isMoving, isAttacking, DeployedObjects
+                    - **Mods**: ItemMods, ExplicitMods, ImplicitMods, ItemLevel, ItemRarity, Identified, UniqueName
+                    - **Render**: Pos, Bounds, Name, Height, TerrainHeight
+                    - **Positioned**: GridPos, WorldPos, Rotation, Scale
+                    - **Player**: Level, AllocatedLootId
+                    - **Stats**: StatDictionary (all entity stats)
+                    - **Buffs**: BuffsList
+                    - **Chest**: IsOpened, IsLocked, IsStrongbox
+                    - **Flask**: CurrentCharges, MaxCharges
+                    - **Sockets**: SocketedGems, NumberOfSockets, Links
+                    - **Stack**: Size, MaxStackSize
+                    - **WorldItem**: ItemEntity (for ground items)
+                    - **Monster**: Affixes, MonsterType
+                    - **Map**: Tier, Area
+                    - **SkillGem**: Level, QualityType
+                    - **Quality**: ItemQuality
+
+                    ## ServerData (via IngameState.ServerData)
+                    PlayerInventories, PlayerStashTabs, PassiveSkillIds, League, Latency, CharacterLevel, Gold
+
+                    ## IngameUIElements Key Panels
+                    StashElement, InventoryPanel, Atlas, AtlasTreePanel, TreePanel (passive tree), Map, SkillBar, TradeWindow, SellWindow, NpcDialog, ChatBox, ItemsOnGroundLabels
 
                     ## No Pre-imported Namespaces
                     Scripts must import all namespaces explicitly.
@@ -352,7 +381,7 @@ public class McpServer : IDisposable
                             var entities = Global.Entities?
                                 .Where(e => e.IsValid && e.IsHostile)
                                 .Take(10)
-                                .Select(e => new { e.Id, e.RenderName, e.GridPos })
+                                .Select(e => new { e.Id, e.RenderName, e.GridPos, e.Rarity })
                                 .ToList();
 
                             return new { Count = entities?.Count ?? 0, Entities = entities };
@@ -373,13 +402,43 @@ public class McpServer : IDisposable
                         {
                             var player = Global.Player;
                             var life = player?.GetComponent<Life>();
+                            var actor = player?.GetComponent<Actor>();
 
                             return new {
                                 HP = life?.CurHP,
                                 MaxHP = life?.MaxHP,
                                 ES = life?.CurES,
-                                MaxES = life?.MaxES
+                                MaxES = life?.MaxES,
+                                IsMoving = actor?.isMoving,
+                                Skills = actor?.ActorSkills?.Count
                             };
+                        }
+                    }
+                    ```
+
+                    ### Example 4: Read inventory items
+                    ```csharp
+                    using System.Linq;
+                    using System.Threading;
+                    using System.Threading.Tasks;
+                    using ExportGlobals;
+                    using ExileCore.PoEMemory.Components;
+
+                    public class Script
+                    {
+                        public static async Task<object> Execute(CancellationToken ct)
+                        {
+                            var inventory = Global.IngameUi?.InventoryPanel;
+                            var items = inventory?[ExileCore.Shared.Enums.InventoryIndex.PlayerInventory]?.VisibleInventoryItems?
+                                .Where(i => i?.Item != null)
+                                .Take(10)
+                                .Select(i => new {
+                                    Name = i.Item.GetComponent<Base>()?.Name,
+                                    i.Item.Path
+                                })
+                                .ToList();
+
+                            return items;
                         }
                     }
                     ```

@@ -1,6 +1,9 @@
 {
   "mcpServers": {
-
+    "exile-api-eval": {
+      "type": "http",
+      "url": "http://localhost:5099/mcp"
+    },
     "exile-api": {
       "type": "stdio",
       "command": "S:\\Reflector\\McpNetDll\\bin\\Release\\net9.0\\publish\\McpNetDll.exe",
