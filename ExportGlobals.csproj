@@ -29,6 +29,10 @@
       <HintPath>$(exapiPackage)\GameOffsets.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="SharpDX.Mathematics">
+      <HintPath>$(exapiPackage)\SharpDX.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
