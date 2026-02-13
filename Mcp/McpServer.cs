@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -235,6 +237,9 @@ public class McpServer : IDisposable
         var toolName = paramsToken?["name"]?.ToString();
         var arguments = paramsToken?["arguments"] as JObject;
 
+        if (toolName == "screenshot")
+            return HandleScreenshot(id);
+
         var (text, isError) = toolName switch
         {
             "execute" => FormatExecuteResult(await ExecuteWithTimeoutAsync(arguments)),
@@ -257,6 +262,68 @@ public class McpServer : IDisposable
         var timeoutSeconds = arguments?["timeout"]?.Value<int>() ?? DefaultTimeoutSeconds;
         var timeout = TimeSpan.FromSeconds(timeoutSeconds);
         return await _controller.ExecuteAsync(code, timeout);
+    }
+
+    private object HandleScreenshot(JToken id)
+    {
+        try
+        {
+            var rect = Global.Controller?.Window?.GetWindowRectangleReal();
+            if (rect == null)
+            {
+                return CreateResponse(id, new Dictionary<string, object>
+                {
+                    ["content"] = new List<object>
+                    {
+                        new Dictionary<string, object> { ["type"] = "text", ["text"] = "No game window found" }
+                    },
+                    ["isError"] = true
+                });
+            }
+
+            var r = rect.Value;
+            var x = (int)r.X;
+            var y = (int)r.Y;
+            var w = (int)r.Width;
+            var h = (int)r.Height;
+
+            using var bmp = new Bitmap(w, h);
+            using var g = Graphics.FromImage(bmp);
+            g.CopyFromScreen(x, y, 0, 0, new Size(w, h));
+
+            using var ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Png);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+
+            return CreateResponse(id, new Dictionary<string, object>
+            {
+                ["content"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["type"] = "image",
+                        ["data"] = base64,
+                        ["mimeType"] = "image/png"
+                    },
+                    new Dictionary<string, object>
+                    {
+                        ["type"] = "text",
+                        ["text"] = $"Screenshot captured: {w}x{h}"
+                    }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return CreateResponse(id, new Dictionary<string, object>
+            {
+                ["content"] = new List<object>
+                {
+                    new Dictionary<string, object> { ["type"] = "text", ["text"] = $"Screenshot failed: {ex.Message}" }
+                },
+                ["isError"] = true
+            });
+        }
     }
 
     private static (string text, bool isError) FormatExecuteResult(ExecuteToolResult result)
@@ -461,6 +528,16 @@ public class McpServer : IDisposable
                         }
                     },
                     ["required"] = new[] { "code" }
+                }
+            },
+            new Dictionary<string, object>
+            {
+                ["name"] = "screenshot",
+                ["description"] = "Capture a screenshot of the Path of Exile game window. Returns the image directly as PNG. The capture area is determined automatically from the game window position and size, and works across multiple monitors.",
+                ["inputSchema"] = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>()
                 }
             }
         };
