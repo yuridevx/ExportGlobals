@@ -8,6 +8,7 @@ namespace ExportGlobals;
 public class ExportGlobals : BaseSettingsPlugin<ExportGlobalsSettings>
 {
     private McpServer _mcpServer;
+    private AutoReloadListener _autoReloadListener;
 
     public override bool Initialise()
     {
@@ -30,6 +31,10 @@ public class ExportGlobals : BaseSettingsPlugin<ExportGlobalsSettings>
             else
                 StopMcpServer();
         };
+
+        // Start auto-reload listener (always on)
+        _autoReloadListener = new AutoReloadListener(GameController, LogMessage, LogError);
+        _autoReloadListener.Start();
 
         return true;
     }
@@ -88,6 +93,7 @@ public class ExportGlobals : BaseSettingsPlugin<ExportGlobalsSettings>
 
     public override void OnUnload()
     {
+        _autoReloadListener?.Dispose();
         StopMcpServer();
         base.OnUnload();
     }
